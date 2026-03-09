@@ -28,6 +28,14 @@
 
     <form method="POST">
         <div class="settings-section">
+            <h2>Login Password</h2>
+            <p class="upload-help">Change the dashboard login password. Leave blank to keep the current password.</p>
+            <div style="max-width: 360px;">
+                <input type="password" name="new_password" class="settings-input" placeholder="Enter new password" autocomplete="new-password">
+            </div>
+        </div>
+
+        <div class="settings-section">
             <h2>Email Template</h2>
             <p class="upload-help">Default email body sent to stores with discrepancies. Use <code>{{sku_table}}</code> as a placeholder for the list of discrepant SKUs.</p>
             <textarea name="email_body_template" class="settings-textarea">{{ settings.email_body_template }}</textarea>

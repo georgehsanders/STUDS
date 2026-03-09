@@ -11,7 +11,7 @@ from flask import (Flask, render_template, jsonify, request, redirect,
 app = Flask(__name__)
 
 # --- Password protection ---
-APP_PASSWORD = 'studs2024'
+DEFAULT_PASSWORD = 'studs2024'
 app.secret_key = 'studs-secret-key-change-in-production'
 
 INPUT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'input')
@@ -60,6 +60,7 @@ def load_settings():
     defaults = {
         'email_body_template': DEFAULT_EMAIL_BODY,
         'store_emails': {},
+        'app_password': DEFAULT_PASSWORD,
     }
     if os.path.exists(SETTINGS_FILE):
         try:
@@ -426,7 +427,8 @@ def run_reconciliation():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        if request.form.get('password') == APP_PASSWORD:
+        settings = load_settings()
+        if request.form.get('password') == settings.get('app_password', DEFAULT_PASSWORD):
             session['logged_in'] = True
             return redirect(url_for('index'))
         else:
@@ -492,6 +494,11 @@ def settings_page():
     settings = load_settings()
     if request.method == 'POST':
         settings['email_body_template'] = request.form.get('email_body_template', DEFAULT_EMAIL_BODY)
+        # Handle password change
+        new_password = request.form.get('new_password', '').strip()
+        if new_password:
+            settings['app_password'] = new_password
+            flash('Password updated.', 'success')
         # Save per-store emails
         store_emails = {}
         for key, val in request.form.items():

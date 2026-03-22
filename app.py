@@ -136,7 +136,7 @@ def scan_input_files():
         if m_sku:
             sku_lists.append((filename, m_sku.group(1)))
         elif m_var:
-            store_id = str(int(m_var.group(1)))  # Normalize: strip leading zeros
+            store_id = m_var.group(1).zfill(3)  # Normalize: zero-pad to 3 digits
             variance_files[store_id] = filename
         elif m_audit:
             audit_trails.append((filename, m_audit.group(1)))
@@ -240,10 +240,10 @@ def load_variance(filepath):
 
 def parse_warehouse_id(warehouse_str):
     """Extract numeric store ID from warehouse string like '033 CA Fashion Island'.
-    Returns the numeric prefix as a string (stripped of leading zeros for matching)."""
+    Returns the numeric prefix zero-padded to 3 digits for consistent matching."""
     m = re.match(r'^(\d+)', warehouse_str.strip())
     if m:
-        return str(int(m.group(1)))  # Remove leading zeros
+        return m.group(1).zfill(3)  # Zero-pad to 3 digits
     return warehouse_str.strip()
 
 

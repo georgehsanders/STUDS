@@ -10,22 +10,22 @@
 
     <header class="hq-spa-header">
         <div class="hq-zone1">
-            <nav class="hq-portal-nav hq-portal-nav-left">
+            <nav class="hq-z1-left">
                 <a href="/hq/" class="hq-portal-link hq-current">HQ</a>
-                <span class="hq-nav-sep">|</span>
+                <span class="hq-pipe">|</span>
                 <a href="/hq/goto-studio" class="hq-portal-link">STUDIO</a>
-                <span class="hq-nav-sep">|</span>
+                <span class="hq-pipe">|</span>
                 <a href="/hq/logout" class="hq-portal-link">LOGOUT</a>
             </nav>
-            <div class="hq-logo-block">
-                <span class="hq-spa-logotype">STUDS</span>
-                <span class="hq-spa-confidential">CONFIDENTIAL</span>
+            <div class="hq-z1-center">
+                <div class="hq-logotype">STUDS</div>
+                <div class="hq-confidential-sub">CONFIDENTIAL</div>
             </div>
-            <nav class="hq-portal-nav hq-portal-nav-right">
+            <nav class="hq-z1-right">
                 <a href="/hq/upload" class="hq-portal-link">UPLOAD</a>
-                <span class="hq-nav-sep">|</span>
-                <button class="hq-portal-link" onclick="doRefresh();">REFRESH</button>
-                <span class="hq-nav-sep">|</span>
+                <span class="hq-pipe">|</span>
+                <button class="hq-portal-link hq-portal-btn" id="refresh-btn" onclick="doRefresh();">REFRESH</button>
+                <span class="hq-pipe">|</span>
                 <a href="/hq/settings" class="hq-portal-link">SETTINGS</a>
             </nav>
         </div>

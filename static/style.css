@@ -708,7 +708,7 @@ header h1 {
 }
 
 .hq-btn-lavender {
-    background: #F0BF4C;
+    background: #ffffff;
 }
 
 /* --- Main content area --- */
@@ -2248,7 +2248,7 @@ body.hq-body .settings-textarea {
 }
 
 .hq-summary-info-block {
-    padding: 16px 24px;
+    padding: 16px 20px;
     border-left: 1px solid #e0e0e0;
     display: flex;
     flex-direction: column;
@@ -2285,7 +2285,29 @@ body.hq-body .settings-textarea {
 /* --- Branded action buttons --- */
 
 .hq-btn-lime-link,
-.hq-btn-lavender-link,
+.hq-btn-lavender-link {
+    display: inline-flex;
+    align-items: center;
+    background: #ffffff;
+    color: #000000;
+    border: 1.5px solid #000000;
+    border-radius: 0;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 11px;
+    font-weight: 400;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 0 18px;
+    height: 34px;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.hq-btn-lime-link:hover,
+.hq-btn-lavender-link:hover {
+    text-decoration: underline;
+}
+
 .hq-btn-gold {
     display: inline-flex;
     align-items: center;

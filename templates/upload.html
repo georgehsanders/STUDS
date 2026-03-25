@@ -63,49 +63,46 @@
             <p class="hq-help-text">Upload variance files, SKU lists, or audit trail CSVs.</p>
             <form method="POST" enctype="multipart/form-data" class="hq-upload-form">
                 <input type="file" name="files" multiple accept=".csv" required>
-                <button type="submit" class="hq-btn hq-btn-gold">UPLOAD</button>
-                <a href="/hq/" class="hq-btn hq-btn-gold">RETURN TO DASHBOARD</a>
+                <button type="submit" class="hq-btn hq-btn-lavender">UPLOAD</button>
+                <a href="/hq/" class="hq-btn hq-btn-lavender">RETURN TO DASHBOARD</a>
             </form>
         </div>
 
-        <div class="hq-controls-row">
-            <div class="hq-controls-left">
-                <label class="hq-control-label">Filter
-                    <select id="file-filter" class="hq-select" onchange="filterFiles()">
-                        <option value="all">All</option>
-                        <option value="sku_list">SKU List</option>
-                        <option value="audit_trail">Audit Trail</option>
-                        <option value="variance">Variance</option>
-                    </select>
-                </label>
-                <label class="hq-control-label">Sort
-                    <select id="file-sort" class="hq-select" onchange="sortFiles()">
-                        <option value="name-asc">Name (A→Z)</option>
-                        <option value="name-desc">Name (Z→A)</option>
-                        <option value="date-desc">Date (Newest)</option>
-                        <option value="date-asc">Date (Oldest)</option>
-                        <option value="size-desc">Size (Largest)</option>
-                        <option value="size-asc">Size (Smallest)</option>
-                    </select>
-                </label>
-            </div>
-        </div>
-
-        {% if global_files %}
+        {% if global_files or variance_files %}
         <div class="hq-section">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
-                <h2 class="hq-section-heading" style="margin-bottom:0;">Global Files</h2>
+                <div style="display:flex;align-items:center;gap:16px;">
+                    <h2 class="hq-section-heading" style="margin-bottom:0;">Current Files in /input/</h2>
+                    <label class="hq-control-label">Filter
+                        <select id="file-filter" class="hq-select" onchange="filterFiles()">
+                            <option value="all">All</option>
+                            <option value="sku_list">SKU List</option>
+                            <option value="audit_trail">Audit Trail</option>
+                            <option value="variance">Variance</option>
+                        </select>
+                    </label>
+                    <label class="hq-control-label">Sort
+                        <select id="file-sort" class="hq-select" onchange="sortFiles()">
+                            <option value="name-asc">Name (A→Z)</option>
+                            <option value="name-desc">Name (Z→A)</option>
+                            <option value="date-desc">Date (Newest)</option>
+                            <option value="date-asc">Date (Oldest)</option>
+                            <option value="size-desc">Size (Largest)</option>
+                            <option value="size-asc">Size (Smallest)</option>
+                        </select>
+                    </label>
+                </div>
                 <div style="display:flex;gap:8px;">
-                    <button type="button" class="hq-btn hq-btn-outline" onclick="toggleSelect('global');" id="select-global-btn">SELECT FILES</button>
+                    <button type="button" class="hq-btn hq-btn-gold" onclick="toggleSelectMode();" id="select-btn">SELECT FILES</button>
                     <form method="POST" action="/hq/delete-all-files" style="margin:0;">
                         <button type="submit" class="hq-btn-red" onclick="return confirm('Delete all files?')">DELETE ALL</button>
                     </form>
                 </div>
             </div>
-            <table class="hq-table" id="global-table">
+            <table class="hq-table" id="files-table">
                 <thead>
                     <tr>
-                        <th class="select-col-global" style="display:none;width:30px;"><input type="checkbox" onchange="toggleSelectAll('global', this);"></th>
+                        <th class="select-col" style="display:none;width:30px;"><input type="checkbox" id="select-all" onchange="toggleSelectAll(this);"></th>
                         <th>File Name</th>
                         <th>Last Modified</th>
                         <th>Size</th>
@@ -115,7 +112,7 @@
                 <tbody>
                     {% for f in global_files %}
                     <tr class="file-row" data-type="{{ f.type }}" data-name="{{ f.name|lower }}" data-date="{{ f.modified }}" data-size="{{ f.size }}">
-                        <td class="select-col-global" style="display:none;"><input type="checkbox" name="filenames" value="{{ f.name }}" class="file-cb-global"></td>
+                        <td class="select-col" style="display:none;"><input type="checkbox" name="filenames" value="{{ f.name }}" class="file-cb"></td>
                         <td>{{ f.name }}</td>
                         <td>{{ f.modified }}</td>
                         <td>{{ f.size }}</td>
@@ -128,31 +125,12 @@
                         </td>
                     </tr>
                     {% endfor %}
-                </tbody>
-            </table>
-        </div>
-        {% endif %}
-
-        {% if variance_files %}
-        <div class="hq-section">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
-                <h2 class="hq-section-heading" style="margin-bottom:0;">Variance Files</h2>
-                <button type="button" class="hq-btn hq-btn-outline" onclick="toggleSelect('variance');" id="select-variance-btn">SELECT FILES</button>
-            </div>
-            <table class="hq-table" id="variance-table">
-                <thead>
-                    <tr>
-                        <th class="select-col-variance" style="display:none;width:30px;"><input type="checkbox" onchange="toggleSelectAll('variance', this);"></th>
-                        <th>File Name</th>
-                        <th>Last Modified</th>
-                        <th>Size</th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody>
+                    {% if global_files and variance_files %}
+                    <tr class="hq-file-separator"><td colspan="5"><hr style="border:none;border-top:1px solid #e0e0e0;margin:8px 0;"></td></tr>
+                    {% endif %}
                     {% for f in variance_files %}
                     <tr class="file-row" data-type="{{ f.type }}" data-name="{{ f.name|lower }}" data-date="{{ f.modified }}" data-size="{{ f.size }}">
-                        <td class="select-col-variance" style="display:none;"><input type="checkbox" name="filenames" value="{{ f.name }}" class="file-cb-variance"></td>
+                        <td class="select-col" style="display:none;"><input type="checkbox" name="filenames" value="{{ f.name }}" class="file-cb"></td>
                         <td>{{ f.name }}</td>
                         <td>{{ f.modified }}</td>
                         <td>{{ f.size }}</td>
@@ -168,23 +146,24 @@
                 </tbody>
             </table>
         </div>
-        {% endif %}
-
-        {% if not global_files and not variance_files %}
+        {% else %}
         <p class="hq-no-disc">No files found in /input/.</p>
         {% endif %}
     </div>
 
     <script>
-        var selectStates = {global: false, variance: false};
-        function toggleSelect(group) {
-            selectStates[group] = !selectStates[group];
-            document.querySelectorAll('.select-col-' + group).forEach(function(el) { el.style.display = selectStates[group] ? '' : 'none'; });
-            var btn = document.getElementById('select-' + group + '-btn');
-            if (btn) btn.textContent = selectStates[group] ? 'CANCEL SELECT' : 'SELECT FILES';
+        var selectMode = false;
+        function toggleSelectMode() {
+            selectMode = !selectMode;
+            document.querySelectorAll('.select-col').forEach(function(el) { el.style.display = selectMode ? '' : 'none'; });
+            document.getElementById('select-btn').textContent = selectMode ? 'CANCEL SELECT' : 'SELECT FILES';
+            if (!selectMode) {
+                document.getElementById('select-all').checked = false;
+                document.querySelectorAll('.file-cb').forEach(function(cb) { cb.checked = false; });
+            }
         }
-        function toggleSelectAll(group, master) {
-            document.querySelectorAll('.file-cb-' + group).forEach(function(cb) { cb.checked = master.checked; });
+        function toggleSelectAll(master) {
+            document.querySelectorAll('.file-cb').forEach(function(cb) { cb.checked = master.checked; });
         }
         function filterFiles() {
             var val = document.getElementById('file-filter').value;
@@ -194,22 +173,20 @@
         }
         function sortFiles() {
             var val = document.getElementById('file-sort').value;
-            ['global-table', 'variance-table'].forEach(function(tid) {
-                var table = document.getElementById(tid);
-                if (!table) return;
-                var tbody = table.querySelector('tbody');
-                var rows = Array.from(tbody.querySelectorAll('.file-row'));
-                rows.sort(function(a, b) {
-                    if (val === 'name-asc') return a.dataset.name.localeCompare(b.dataset.name);
-                    if (val === 'name-desc') return b.dataset.name.localeCompare(a.dataset.name);
-                    if (val === 'date-desc') return b.dataset.date.localeCompare(a.dataset.date);
-                    if (val === 'date-asc') return a.dataset.date.localeCompare(b.dataset.date);
-                    if (val === 'size-desc') return parseFloat(b.dataset.size) - parseFloat(a.dataset.size);
-                    if (val === 'size-asc') return parseFloat(a.dataset.size) - parseFloat(b.dataset.size);
-                    return 0;
-                });
-                rows.forEach(function(row) { tbody.appendChild(row); });
+            var tbody = document.querySelector('#files-table tbody');
+            var rows = Array.from(tbody.querySelectorAll('.file-row'));
+            var sep = tbody.querySelector('.hq-file-separator');
+            rows.sort(function(a, b) {
+                if (val === 'name-asc') return a.dataset.name.localeCompare(b.dataset.name);
+                if (val === 'name-desc') return b.dataset.name.localeCompare(a.dataset.name);
+                if (val === 'date-desc') return b.dataset.date.localeCompare(a.dataset.date);
+                if (val === 'date-asc') return a.dataset.date.localeCompare(b.dataset.date);
+                if (val === 'size-desc') return parseFloat(b.dataset.size) - parseFloat(a.dataset.size);
+                if (val === 'size-asc') return parseFloat(a.dataset.size) - parseFloat(b.dataset.size);
+                return 0;
             });
+            rows.forEach(function(row) { tbody.appendChild(row); });
+            if (sep) tbody.appendChild(sep); // move separator to end when sorting
         }
     </script>
 </body>

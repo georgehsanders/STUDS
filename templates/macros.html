@@ -1,0 +1,35 @@
+{# ---------- Button macros ---------- #}
+
+{% macro btn_gold(label, onclick=None, type='button', name=None, value=None, href=None, id=None, class_extra='') -%}
+{% if href -%}
+<a href="{{ href }}" class="hq-btn hq-btn-lavender{{ ' ' + class_extra if class_extra }}"{% if onclick %} onclick="{{ onclick }}"{% endif %}{% if id %} id="{{ id }}"{% endif %}>{{ label }}</a>
+{%- else -%}
+<button type="{{ type }}" class="hq-btn hq-btn-lavender{{ ' ' + class_extra if class_extra }}"{% if onclick %} onclick="{{ onclick }}"{% endif %}{% if name %} name="{{ name }}"{% endif %}{% if value is not none %} value="{{ value }}"{% endif %}{% if id %} id="{{ id }}"{% endif %}>{{ label }}</button>
+{%- endif %}
+{%- endmacro %}
+
+{% macro btn_white(label, href=None, onclick=None, type='button', id=None) -%}
+{% if href -%}
+<a href="{{ href }}" class="hq-btn hq-btn-gold"{% if onclick %} onclick="{{ onclick }}"{% endif %}{% if id %} id="{{ id }}"{% endif %}>{{ label }}</a>
+{%- else -%}
+<button type="{{ type }}" class="hq-btn hq-btn-gold"{% if onclick %} onclick="{{ onclick }}"{% endif %}{% if id %} id="{{ id }}"{% endif %}>{{ label }}</button>
+{%- endif %}
+{%- endmacro %}
+
+{% macro btn_red(label, onclick=None, type='submit', name=None, value=None) -%}
+<button type="{{ type }}" class="hq-btn-red"{% if onclick %} onclick="{{ onclick }}"{% endif %}{% if name %} name="{{ name }}"{% endif %}{% if value is not none %} value="{{ value }}"{% endif %}>{{ label }}</button>
+{%- endmacro %}
+
+{# ---------- Flash messages ---------- #}
+
+{% macro flash_messages() -%}
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+<div class="hq-warnings">
+    {% for category, message in messages %}
+    <div class="hq-warning-item {% if category == 'success' %}hq-warning-success{% endif %}">{{ message }}</div>
+    {% endfor %}
+</div>
+{% endif %}
+{% endwith %}
+{%- endmacro %}

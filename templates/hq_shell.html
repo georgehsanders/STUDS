@@ -25,7 +25,7 @@
                 <a href="/hq/settings" class="hq-portal-link">SETTINGS</a>
             </div>
         </div>
-        <div class="hq-header-divider"></div>
+        <hr class="hq-header-rule">
         <div class="hq-zone2">
             <div class="hq-zone2-left">
                 <a href="#" class="hq-section-link" data-section="dashboard" onclick="event.preventDefault(); loadSection('dashboard');">DASHBOARD</a>
@@ -34,7 +34,7 @@
                 <a href="#" class="hq-section-link" data-section="studios" onclick="event.preventDefault(); loadSection('studios');">STUDIOS</a>
             </div>
             <div class="hq-zone2-right">
-                <span class="hq-timestamp-box">Updated: <strong id="last-loaded">{{ data.last_loaded }}</strong></span>
+                <span class="hq-timestamp-box" id="last-loaded">Updated: {{ data.last_loaded }}</span>
             </div>
         </div>
     </header>
@@ -71,7 +71,7 @@
             fetch('/hq/refresh', { method: 'POST' })
                 .then(function(r) { return r.json(); })
                 .then(function(data) {
-                    document.getElementById('last-loaded').textContent = data.last_loaded;
+                    document.getElementById('last-loaded').textContent = 'Updated: ' + data.last_loaded;
                     if (currentSection === 'dashboard') loadSection('dashboard');
                 })
                 .catch(function(err) { alert('Refresh failed: ' + err); });

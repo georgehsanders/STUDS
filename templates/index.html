@@ -18,10 +18,11 @@
         </div>
         <div class="hq-header-right">
             <span class="hq-timestamp">Updated <strong id="last-loaded">{{ data.last_loaded }}</strong></span>
+            <button id="refresh-btn" class="hq-btn hq-btn-white" onclick="refreshData()">REFRESH</button>
             <a href="/hq/upload" class="hq-nav-link">UPLOAD</a>
             <a href="/hq/settings" class="hq-nav-link">SETTINGS</a>
             <a href="/hq/logout" class="hq-nav-link">LOGOUT</a>
-            <button id="refresh-btn" class="hq-btn hq-btn-lime" onclick="refreshData()">REFRESH</button>
+            <a href="/hq/database" class="hq-btn hq-btn-lime">DATABASE</a>
             <a href="/hq/export" class="hq-btn hq-btn-lavender">EXPORT CSV</a>
         </div>
     </header>

@@ -25,6 +25,7 @@ DATABASE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'databas
 MASTER_DIR = os.path.join(DATABASE_DIR, 'master')
 IMAGES_DIR = os.path.join(DATABASE_DIR, 'images')
 STORE_DB = os.path.join(DATABASE_DIR, 'store_profiles.db')
+ARCHIVE_DB = os.path.join(DATABASE_DIR, 'archive.db')
 
 # --- Status constants ---
 STATUS_UPDATED = "Updated"
@@ -172,6 +173,131 @@ def is_studio_locked(timezone_str):
         return False
     now = datetime.now(tz)
     return now.weekday() >= 4  # 4=Friday, 5=Saturday, 6=Sunday
+
+
+# --- Archive database ---
+
+def get_archive_db():
+    """Get a SQLite connection to the archive database."""
+    conn = sqlite3.connect(ARCHIVE_DB)
+    conn.row_factory = sqlite3.Row
+    return conn
+
+
+def init_archive_db():
+    """Create the archive database and tables if they don't exist."""
+    os.makedirs(DATABASE_DIR, exist_ok=True)
+    conn = sqlite3.connect(ARCHIVE_DB)
+    conn.execute('''CREATE TABLE IF NOT EXISTS archive_files (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        file_type TEXT NOT NULL,
+        original_filename TEXT NOT NULL,
+        store_id TEXT,
+        archived_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        file_date TEXT,
+        row_count INTEGER,
+        file_size_bytes INTEGER,
+        content TEXT
+    )''')
+    conn.execute('''CREATE TABLE IF NOT EXISTS image_flags (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        image_filename TEXT NOT NULL UNIQUE,
+        flag_type TEXT NOT NULL,
+        sku TEXT,
+        status TEXT DEFAULT 'unresolved',
+        resolved_at TIMESTAMP,
+        notes TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )''')
+    conn.commit()
+    conn.close()
+
+
+def archive_file_if_exists(filepath, file_type, store_id=None):
+    """Archive a file before it gets overwritten. Returns True if archived."""
+    if not os.path.isfile(filepath):
+        return False
+    with open(filepath, 'r', errors='replace') as f:
+        content = f.read()
+    file_size = os.path.getsize(filepath)
+    row_count = max(0, content.count('\n') - 1)  # subtract header row
+    filename = os.path.basename(filepath)
+    conn = get_archive_db()
+    conn.execute(
+        'INSERT INTO archive_files (file_type, original_filename, store_id, file_size_bytes, row_count, content) VALUES (?, ?, ?, ?, ?, ?)',
+        (file_type, filename, store_id, file_size, row_count, content)
+    )
+    conn.commit()
+    conn.close()
+    return True
+
+
+def classify_upload_filename(filename):
+    """Determine file_type and store_id from a filename. Returns (file_type, store_id) or (None, None)."""
+    m_sku = RE_SKU_LIST.match(filename)
+    if m_sku:
+        return ('sku_list', None)
+    m_var = RE_VARIANCE.match(filename)
+    if m_var:
+        return ('variance', m_var.group(1).zfill(3))
+    m_audit = RE_AUDIT_TRAIL.match(filename)
+    if m_audit:
+        return ('audit_trail', None)
+    return (None, None)
+
+
+def run_image_sku_audit():
+    """Audit image/SKU matches. Returns {orphaned: N, missing: N}."""
+    master = load_master_skus()
+    master_skus = set(master.keys())  # uppercase
+
+    # Scan images
+    image_files = []
+    if os.path.isdir(IMAGES_DIR):
+        image_files = [f for f in os.listdir(IMAGES_DIR) if os.path.isfile(os.path.join(IMAGES_DIR, f))]
+
+    # Build matched sets
+    matched_images = set()
+    matched_skus = set()
+    for img in image_files:
+        img_lower = img.lower()
+        for sku in master_skus:
+            if img_lower.startswith(sku.lower()):
+                matched_images.add(img)
+                matched_skus.add(sku)
+                break
+
+    orphaned_images = [img for img in image_files if img not in matched_images]
+    missing_skus = [sku for sku in master_skus if sku not in matched_skus]
+
+    conn = get_archive_db()
+
+    # Clear flags that are now resolved
+    conn.execute("DELETE FROM image_flags WHERE flag_type = 'orphaned_image' AND status = 'unresolved' AND image_filename NOT IN ({})".format(
+        ','.join('?' * len(orphaned_images)) if orphaned_images else "'__none__'"
+    ), orphaned_images if orphaned_images else [])
+
+    conn.execute("DELETE FROM image_flags WHERE flag_type = 'missing_image' AND status = 'unresolved' AND image_filename NOT IN ({})".format(
+        ','.join('?' * len(missing_skus)) if missing_skus else "'__none__'"
+    ), missing_skus if missing_skus else [])
+
+    # Insert new orphaned image flags
+    for img in orphaned_images:
+        conn.execute(
+            "INSERT OR IGNORE INTO image_flags (image_filename, flag_type) VALUES (?, 'orphaned_image')",
+            (img,)
+        )
+
+    # Insert new missing image flags (use SKU as image_filename for uniqueness)
+    for sku in missing_skus:
+        conn.execute(
+            "INSERT OR IGNORE INTO image_flags (image_filename, flag_type, sku) VALUES (?, 'missing_image', ?)",
+            (sku, sku)
+        )
+
+    conn.commit()
+    conn.close()
+    return {'orphaned': len(orphaned_images), 'missing': len(missing_skus)}
 
 
 def studio_login_required(f):
@@ -751,11 +877,14 @@ def hq_upload():
         for f in files:
             if f.filename:
                 filepath = os.path.join(INPUT_DIR, f.filename)
+                file_type, store_id = classify_upload_filename(f.filename)
+                if file_type:
+                    archive_file_if_exists(filepath, file_type, store_id)
                 f.save(filepath)
                 uploaded.append(f.filename)
         if uploaded:
             flash(f'Uploaded {len(uploaded)} file(s): {", ".join(uploaded)}', 'success')
-        return redirect(url_for('hq_upload'))
+        return redirect(url_for('hq_index'))
 
     # List current files in /input/
     current_files = []
@@ -942,7 +1071,132 @@ def hq_export_csv():
     )
 
 
+@app.route('/hq/database', methods=['GET', 'POST'])
+@hq_login_required
+def hq_database():
+    msf_path = os.path.join(MASTER_DIR, 'SKU_Master.csv')
+    diff_added = []
+    diff_removed = []
+
+    if request.method == 'POST':
+        action = request.form.get('action', '')
+
+        if action == 'upload_msf':
+            f = request.files.get('msf_file')
+            if f and f.filename:
+                # Archive old MSF
+                archive_file_if_exists(msf_path, 'master_sku')
+                # Read old SKUs for diff
+                old_skus = set(load_master_skus().keys())
+                # Save new file
+                os.makedirs(MASTER_DIR, exist_ok=True)
+                f.save(msf_path)
+                # Diff
+                new_skus = set(load_master_skus().keys())
+                diff_added = sorted(new_skus - old_skus)
+                diff_removed = sorted(old_skus - new_skus)
+                # Run audit
+                run_image_sku_audit()
+                flash(f'Master SKU file updated. {len(diff_added)} SKUs added, {len(diff_removed)} SKUs removed.', 'success')
+
+        elif action == 'upload_images':
+            img_files = request.files.getlist('image_files')
+            count = 0
+            os.makedirs(IMAGES_DIR, exist_ok=True)
+            for f in img_files:
+                if f.filename:
+                    f.save(os.path.join(IMAGES_DIR, f.filename))
+                    count += 1
+            if count:
+                run_image_sku_audit()
+                flash(f'{count} images uploaded.', 'success')
+
+        return redirect(url_for('hq_database'))
+
+    # MSF status
+    msf_rows = 0
+    msf_updated = 'N/A'
+    if os.path.isfile(msf_path):
+        msf_rows = len(load_master_skus())
+        msf_updated = datetime.fromtimestamp(os.path.getmtime(msf_path)).strftime('%Y-%m-%d %H:%M:%S')
+
+    # Image count
+    image_count = 0
+    if os.path.isdir(IMAGES_DIR):
+        image_count = len([f for f in os.listdir(IMAGES_DIR) if os.path.isfile(os.path.join(IMAGES_DIR, f))])
+
+    # Audit flags
+    conn = get_archive_db()
+    orphaned = [dict(r) for r in conn.execute(
+        "SELECT * FROM image_flags WHERE flag_type = 'orphaned_image' AND status = 'unresolved' ORDER BY image_filename"
+    ).fetchall()]
+    missing = [dict(r) for r in conn.execute(
+        "SELECT * FROM image_flags WHERE flag_type = 'missing_image' AND status = 'unresolved' ORDER BY sku"
+    ).fetchall()]
+
+    # Add descriptions for missing images
+    master = load_master_skus()
+    for m in missing:
+        m['description'] = master.get(m['sku'], '')
+
+    # Archive browser
+    archives = [dict(r) for r in conn.execute(
+        "SELECT id, file_type, original_filename, store_id, archived_at, row_count, file_size_bytes FROM archive_files ORDER BY archived_at DESC LIMIT 50"
+    ).fetchall()]
+    conn.close()
+
+    return render_template('database.html',
+                           msf_rows=msf_rows, msf_updated=msf_updated,
+                           image_count=image_count,
+                           orphaned=orphaned, missing=missing,
+                           archives=archives,
+                           diff_added=diff_added, diff_removed=diff_removed)
+
+
+@app.route('/hq/database/assign-image', methods=['POST'])
+@hq_login_required
+def hq_assign_image():
+    image_filename = request.form.get('image_filename', '')
+    sku = request.form.get('sku', '').strip()
+    if image_filename and sku and os.path.isdir(IMAGES_DIR):
+        old_path = os.path.join(IMAGES_DIR, image_filename)
+        if os.path.isfile(old_path):
+            ext = os.path.splitext(image_filename)[1]
+            new_filename = sku + ext
+            new_path = os.path.join(IMAGES_DIR, new_filename)
+            os.rename(old_path, new_path)
+            conn = get_archive_db()
+            conn.execute("UPDATE image_flags SET status = 'assigned', sku = ?, resolved_at = CURRENT_TIMESTAMP WHERE image_filename = ?",
+                         (sku, image_filename))
+            conn.commit()
+            conn.close()
+            run_image_sku_audit()
+            flash(f'Image renamed to {new_filename} and assigned to {sku}.', 'success')
+    return redirect(url_for('hq_database'))
+
+
+@app.route('/hq/database/mark-discontinued', methods=['POST'])
+@hq_login_required
+def hq_mark_discontinued():
+    image_filename = request.form.get('image_filename', '')
+    if image_filename:
+        conn = get_archive_db()
+        conn.execute("UPDATE image_flags SET status = 'discontinued', resolved_at = CURRENT_TIMESTAMP WHERE image_filename = ?",
+                     (image_filename,))
+        conn.commit()
+        conn.close()
+        flash(f'Flagged as discontinued: {image_filename}', 'success')
+    return redirect(url_for('hq_database'))
+
+
+@app.route('/hq/analytics')
+@hq_login_required
+def hq_analytics():
+    return render_template('analytics.html')
+
+
 init_store_db()
+init_archive_db()
 
 if __name__ == '__main__':
     os.makedirs(INPUT_DIR, exist_ok=True)

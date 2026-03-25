@@ -1,4 +1,136 @@
-<div class="hq-placeholder">
-    <h2 class="hq-section-heading">Analytics</h2>
-    <p class="hq-muted-text">Coming soon.</p>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+<!-- Panel 1: Network Summary -->
+<div class="hq-analytics-panel">
+    <div class="hq-analytics-stats">
+        <div class="hq-analytics-stat">
+            <div class="hq-summary-label">Network Compliance</div>
+            <div class="hq-summary-value">{{ analytics.network_compliance_rate }}%</div>
+        </div>
+        <div class="hq-analytics-stat">
+            <div class="hq-summary-label">Avg Update Lag</div>
+            <div class="hq-summary-value">{{ analytics.avg_update_lag }} hrs</div>
+        </div>
+        <div class="hq-analytics-stat">
+            <div class="hq-summary-label">Total Discrepancy Units</div>
+            <div class="hq-summary-value">{{ analytics.total_discrepancy_units }}</div>
+        </div>
+        <div class="hq-analytics-stat">
+            <div class="hq-summary-label">Chronic Offenders</div>
+            <div class="hq-summary-value" style="color:#dc2626;">{{ analytics.chronic_offender_count }} stores</div>
+        </div>
+    </div>
 </div>
+
+<!-- Panel 2: Weekly Compliance Trend -->
+<div class="hq-analytics-panel">
+    <h3 class="hq-section-heading">12-Week Compliance Trend</h3>
+    <div style="height:280px;"><canvas id="trend-chart"></canvas></div>
+</div>
+
+<!-- Panel 3: Store Leaderboard -->
+<div class="hq-analytics-panel">
+    <h3 class="hq-section-heading">Store Compliance Leaderboard</h3>
+    <table class="hq-table">
+        <thead>
+            <tr>
+                <th style="width:50px;">Rank</th>
+                <th>Studio</th>
+                <th>Compliance Rate</th>
+                <th>Avg Lag</th>
+                <th>Discrepancy Units</th>
+                <th>Trend</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for store in analytics.leaderboard %}
+            <tr class="{% if loop.index <= 5 %}hq-analytics-top{% elif loop.index > 35 %}hq-analytics-bottom{% endif %}">
+                <td>{{ loop.index }}</td>
+                <td>{{ store.store_id }}</td>
+                <td>{{ store.compliance_rate }}%</td>
+                <td>{{ store.avg_update_lag_hours }} hrs</td>
+                <td>{{ store.total_discrepancy_units }}</td>
+                <td>
+                    {% if store.trend == 'improving' %}<span style="color:#4a9e5c;">&#8593; Improving</span>
+                    {% elif store.trend == 'declining' %}<span style="color:#dc2626;">&#8595; Declining</span>
+                    {% else %}<span style="color:#999999;">&#8594; Stable</span>{% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Panel 4: Top Discrepancy SKUs -->
+<div class="hq-analytics-panel">
+    <h3 class="hq-section-heading">Chronic Discrepancy SKUs (Last 12 Weeks)</h3>
+    <table class="hq-table">
+        <thead>
+            <tr>
+                <th>SKU</th>
+                <th>Description</th>
+                <th>Total Units</th>
+                <th>Stores Affected</th>
+                <th>Weeks Appearing</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for sku in analytics.top_skus %}
+            <tr>
+                <td>{{ sku.sku }}</td>
+                <td>{{ sku.description }}</td>
+                <td>{{ sku.total_discrepancy_units }}</td>
+                <td>{{ sku.stores_affected }}</td>
+                <td>{{ sku.weeks_appearing }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Panel 5: Discrepancy Distribution -->
+<div class="hq-analytics-panel">
+    <h3 class="hq-section-heading">Discrepancy Size Distribution</h3>
+    <div style="height:240px;"><canvas id="dist-chart"></canvas></div>
+</div>
+
+<script>
+(function() {
+    var trend = {{ analytics.weekly_trend | tojson }};
+    var dist = {{ analytics.distribution | tojson }};
+
+    // Trend chart
+    new Chart(document.getElementById('trend-chart'), {
+        type: 'bar',
+        data: {
+            labels: trend.map(function(t) { return t.week_label; }),
+            datasets: [
+                { label: 'Updated', data: trend.map(function(t) { return t.updated_count; }), backgroundColor: 'rgba(200,241,53,0.7)', borderColor: '#5a7a00', borderWidth: 1 },
+                { label: 'Discrepancy', data: trend.map(function(t) { return t.discrepancy_count; }), backgroundColor: 'rgba(220,38,38,0.7)', borderColor: '#dc2626', borderWidth: 1 },
+                { label: 'Incomplete', data: trend.map(function(t) { return t.incomplete_count; }), backgroundColor: 'rgba(224,224,224,0.7)', borderColor: '#aaaaaa', borderWidth: 1 }
+            ]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            scales: { x: { stacked: true }, y: { stacked: true, max: 40 } },
+            plugins: { legend: { position: 'bottom', labels: { font: { family: '"Helvetica Neue", Helvetica, Arial, sans-serif', size: 11 } } } }
+        }
+    });
+
+    // Distribution chart
+    var bucketLabels = Object.keys(dist);
+    var bucketValues = Object.values(dist);
+    new Chart(document.getElementById('dist-chart'), {
+        type: 'bar',
+        data: {
+            labels: bucketLabels,
+            datasets: [{ label: 'Store-Weeks', data: bucketValues, backgroundColor: 'rgba(232,180,248,0.7)', borderColor: '#000000', borderWidth: 1 }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true } }
+        }
+    });
+})();
+</script>

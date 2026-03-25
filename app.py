@@ -11,6 +11,7 @@ import bcrypt
 import pytz
 from flask import (Flask, render_template, jsonify, request, redirect,
                    url_for, session, send_file, send_from_directory, flash)
+import analytics_data
 
 app = Flask(__name__)
 
@@ -928,7 +929,8 @@ def hq_section_dashboard():
 @app.route('/hq/section/analytics')
 @hq_login_required
 def hq_section_analytics():
-    return render_template('fragments/analytics.html')
+    data = analytics_data.get_analytics_data()
+    return render_template('fragments/analytics.html', analytics=data)
 
 
 @app.route('/hq/section/database')
@@ -974,7 +976,8 @@ def hq_section_studios():
             'discrepancy_count': s.get('discrepancy_count', 0),
             'net_discrepancy': s.get('net_discrepancy', 0),
         }
-    return render_template('fragments/studios.html', db_stores=db_stores, recon_status=recon_status, recon_data=recon_data)
+    store_analytics = analytics_data.get_all_store_analytics()
+    return render_template('fragments/studios.html', db_stores=db_stores, recon_status=recon_status, recon_data=recon_data, store_analytics=store_analytics)
 
 
 @app.route('/hq/database/upload-msf', methods=['POST'])

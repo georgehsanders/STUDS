@@ -1,4 +1,5 @@
-<script>var storeReconData = {{ recon_data | tojson }};</script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>var storeReconData = {{ recon_data | tojson }}; var storeAnalytics = {{ store_analytics | tojson }};</script>
 <div class="hq-studios">
     <div class="hq-studios-search-wrap">
         <input type="text" id="studios-search" class="hq-studios-search" placeholder="Search by studio name or number..." oninput="filterStudios()" autocomplete="off">

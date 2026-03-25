@@ -98,6 +98,7 @@
                     });
                     history.pushState({section: section}, '', '/hq/?section=' + section);
                     if (section === 'dashboard') initDashboard();
+                    window.scrollTo(0, 0);
                     if (section === 'studios') initStudios();
                 });
         }

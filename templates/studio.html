@@ -9,26 +9,35 @@
 </head>
 <body class="studio-body">
 
-    <header class="studio-header">
-        <div class="studio-header-left">
-            {% if session.get('is_admin') %}
-            <div class="studio-hq-box">
-                <a href="/studio/goto-hq" class="studio-nav-link">HQ</a>
+    <header class="studio-spa-header">
+        <div class="studio-zone1">
+            <div class="studio-z1-left">
+                <div class="studio-nav-box-lime">
+                    {% if session.get('is_admin') %}
+                    <a href="/studio/goto-hq" class="studio-nav-link">HQ</a>
+                    <span class="hq-pipe">|</span>
+                    {% endif %}
+                    <a href="/studio/logout" class="studio-nav-link">LOGOUT</a>
+                </div>
             </div>
-            {% endif %}
+            <div class="studio-z1-center">
+                <div class="studio-logotype">STUDS</div>
+                <div class="studio-confidential">(CONFIDENTIAL)</div>
+            </div>
+            <div class="studio-z1-right">
+                <div class="studio-nav-box-lavender">
+                    {% if not no_sku_list %}
+                    <button class="studio-nav-link studio-nav-btn" onclick="handlePrint()">PRINT</button>
+                    {% endif %}
+                </div>
+                {% if sku_list_filename %}
+                <span class="studio-sku-filename">{{ sku_list_filename }}</span>
+                {% endif %}
+            </div>
         </div>
-        <div class="studio-header-center">
-            <div class="studio-logotype">STUDS</div>
-            <div class="studio-confidential">(CONFIDENTIAL)</div>
-        </div>
-        <div class="studio-header-right">
-            {% if sku_list_filename %}
-            <span class="studio-sku-filename">{{ sku_list_filename }}</span>
-            {% endif %}
-            {% if not no_sku_list %}
-            <button class="studio-print-btn" onclick="handlePrint()">PRINT</button>
-            {% endif %}
-            <a href="/studio/logout" class="studio-nav-link">LOGOUT</a>
+        <hr class="hq-header-rule">
+        <div class="studio-zone2">
+            <span class="studio-zone2-label">STUDIO</span>
         </div>
     </header>
 
@@ -96,8 +105,8 @@
             try {
                 JsBarcode("#barcode-{{ item.sku }}", "{{ item.sku }}", {
                     format: "CODE128",
-                    width: 1.5,
-                    height: 40,
+                    width: 1,
+                    height: 28,
                     displayValue: false,
                     margin: 0
                 });

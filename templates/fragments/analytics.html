@@ -1,18 +1,29 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+function scrollToSection(id) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    var header = document.querySelector('.hq-spa-header');
+    var headerH = header ? header.offsetHeight : 160;
+    var subnavH = 48;
+    var top = el.getBoundingClientRect().top + window.pageYOffset - headerH - subnavH - 16;
+    window.scrollTo({ top: top, behavior: 'auto' });
+}
+</script>
 
 <!-- Sub-nav -->
 <div class="hq-analytics-subnav">
-    <a href="javascript:void(0)" onclick="document.getElementById('analytics-overview').scrollIntoView()" class="hq-analytics-navlink">OVERVIEW</a>
+    <a href="javascript:void(0)" onclick="scrollToSection('analytics-overview')" class="hq-analytics-navlink">OVERVIEW</a>
     <span class="hq-pipe">|</span>
-    <a href="javascript:void(0)" onclick="document.getElementById('analytics-trend').scrollIntoView()" class="hq-analytics-navlink">COMPLIANCE TREND</a>
+    <a href="javascript:void(0)" onclick="scrollToSection('analytics-trend')" class="hq-analytics-navlink">COMPLIANCE TREND</a>
     <span class="hq-pipe">|</span>
-    <a href="javascript:void(0)" onclick="document.getElementById('analytics-rankings').scrollIntoView()" class="hq-analytics-navlink">STORE RANKINGS</a>
+    <a href="javascript:void(0)" onclick="scrollToSection('analytics-rankings')" class="hq-analytics-navlink">STORE RANKINGS</a>
     <span class="hq-pipe">|</span>
-    <a href="javascript:void(0)" onclick="document.getElementById('analytics-skus').scrollIntoView()" class="hq-analytics-navlink">DISCREPANCY SKUS</a>
+    <a href="javascript:void(0)" onclick="scrollToSection('analytics-skus')" class="hq-analytics-navlink">DISCREPANCY SKUS</a>
     <span class="hq-pipe">|</span>
-    <a href="javascript:void(0)" onclick="document.getElementById('analytics-distribution').scrollIntoView()" class="hq-analytics-navlink">DISTRIBUTION</a>
+    <a href="javascript:void(0)" onclick="scrollToSection('analytics-distribution')" class="hq-analytics-navlink">DISTRIBUTION</a>
     <span class="hq-pipe">|</span>
-    <a href="javascript:void(0)" onclick="document.getElementById('analytics-groups').scrollIntoView()" class="hq-analytics-navlink">STORE GROUPS</a>
+    <a href="javascript:void(0)" onclick="scrollToSection('analytics-groups')" class="hq-analytics-navlink">STORE GROUPS</a>
 </div>
 
 <!-- Panel 1: Network Summary -->
@@ -33,13 +44,13 @@
         <div class="hq-analytics-stat hq-analytics-stat-split">
             <div class="hq-analytics-stat-half">
                 <div class="hq-summary-label">Chronic Offenders</div>
-                <a href="javascript:void(0)" onclick="document.getElementById('analytics-groups').scrollIntoView()" class="hq-summary-value" style="color:#dc2626;text-decoration:none;">{{ analytics.chronic_offender_count }} stores</a>
+                <a href="javascript:void(0)" onclick="scrollToSection('analytics-groups')" class="hq-summary-value" style="color:#dc2626;text-decoration:none;">{{ analytics.chronic_offender_count }} stores</a>
                 <div class="hq-muted-text" style="font-size:10px;">compliance &lt; 60%</div>
             </div>
             <div class="hq-analytics-stat-divider"></div>
             <div class="hq-analytics-stat-half">
                 <div class="hq-summary-label">Top Performers</div>
-                <a href="javascript:void(0)" onclick="document.getElementById('analytics-groups').scrollIntoView()" class="hq-summary-value" style="color:#4a9e5c;text-decoration:none;">{{ analytics.top_performer_count }} stores</a>
+                <a href="javascript:void(0)" onclick="scrollToSection('analytics-groups')" class="hq-summary-value" style="color:#4a9e5c;text-decoration:none;">{{ analytics.top_performer_count }} stores</a>
                 <div class="hq-muted-text" style="font-size:10px;">compliance &ge; 90%</div>
             </div>
         </div>
@@ -171,7 +182,7 @@
             ]
         },
         options: {
-            responsive: true, maintainAspectRatio: false,
+            animation: false, responsive: true, maintainAspectRatio: false,
             scales: { x: { stacked: true }, y: { stacked: true, max: 40 } },
             plugins: { legend: { position: 'bottom', labels: { font: { family: '"Helvetica Neue", Helvetica, Arial, sans-serif', size: 11 } } } }
         }
@@ -186,7 +197,7 @@
             datasets: [{ label: 'Store-Weeks', data: bucketValues, backgroundColor: 'rgba(232,180,248,0.7)', borderColor: '#000000', borderWidth: 1 }]
         },
         options: {
-            responsive: true, maintainAspectRatio: false,
+            animation: false, responsive: true, maintainAspectRatio: false,
             plugins: { legend: { display: false } },
             scales: { y: { beginAtZero: true } }
         }

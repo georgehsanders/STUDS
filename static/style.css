@@ -136,13 +136,6 @@ body { font-family: var(--font-main); }
     color: #1a1a1a;
 }
 
-.hq-header-rule {
-    display: inline-block;
-    width: 1px;
-    height: 22px;
-    background: #d0d0d0;
-}
-
 /* --- Shared label typography --- */
 
 .hq-summary-label,
@@ -153,9 +146,6 @@ body { font-family: var(--font-main); }
 .hq-info-label,
 .hq-analytics-navlink,
 .hq-subsection-heading,
-.studio-zone2-label,
-.studio-header-label,
-.studio-confidential,
 .hq-confidential-sub {
     font-weight: 400;
     letter-spacing: 0.12em;
@@ -174,23 +164,11 @@ body { font-family: var(--font-main); }
     flex-shrink: 0;
 }
 
-.hq-timestamp {
-    font-size: 11px;
-    color: #999999;
-    letter-spacing: 0.02em;
-}
-
-.hq-timestamp strong {
-    font-weight: 500;
-    color: #666666;
-}
-
 /* --- Shared link base --- */
 
 .hq-nav-link,
 .hq-portal-link,
 .hq-section-link,
-.hq-action-link,
 .hq-return-link {
     font-size: 11px;
     font-weight: 400;
@@ -203,7 +181,6 @@ body { font-family: var(--font-main); }
 .hq-nav-link:hover,
 .hq-portal-link:hover,
 .hq-section-link:hover,
-.hq-action-link:hover,
 .hq-return-link:hover {
     text-decoration: underline;
 }
@@ -659,8 +636,6 @@ body.hq-body #refresh-btn:disabled {
 
 /* --- Shared button base --- */
 
-.hq-btn-base,
-.hq-btn-outline,
 .hq-btn-red,
 .hq-btn-delete,
 .hq-btn-gold,
@@ -675,23 +650,12 @@ body.hq-body #refresh-btn:disabled {
     cursor: pointer;
 }
 
-.hq-btn-base:hover,
-.hq-btn-outline:hover,
 .hq-btn-red:hover,
 .hq-btn-delete:hover,
 .hq-btn-gold:hover,
 .hq-btn-lime-link:hover,
 .hq-btn-lavender-link:hover {
     text-decoration: underline;
-}
-
-/* --- Outline button (Delete All) --- */
-
-.hq-btn-outline {
-    background: #ffffff;
-    color: #000000;
-    padding: 0 18px;
-    height: 34px;
 }
 
 .hq-btn-red {
@@ -744,21 +708,6 @@ body.hq-body #refresh-btn:disabled {
 
 /* --- Override old settings-input and settings-textarea within hq-body --- */
 
-body.hq-body .settings-input {
-    border: 1px solid #000000;
-    border-radius: 0;
-    font-size: 13px;
-    padding: 8px 10px;
-}
-
-body.hq-body .settings-textarea {
-    border: 1px solid #000000;
-    border-radius: 0;
-    font-size: 13px;
-    padding: 10px;
-}
-
-
 /* ==========================================================================
    STUDIO PORTAL — Count reference page
    All classes prefixed with studio- to avoid collisions.
@@ -772,175 +721,11 @@ body.hq-body .settings-textarea {
     max-width: none;
 }
 
-/* --- Header --- */
-
-.studio-header {
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    background: #ffffff;
-    border-bottom: 1.5px solid #000000;
-    display: grid;
-    grid-template-columns: 1fr auto 1fr;
-    align-items: center;
-    padding: 0 32px;
-    height: 56px;
-}
-
 .studio-spa-header {
     position: sticky;
     top: 0;
     z-index: 100;
     background: #ffffff;
-}
-
-.studio-zone1 {
-    display: grid;
-    grid-template-columns: 1fr auto 1fr;
-    align-items: center;
-    padding: 20px 32px 10px 32px;
-}
-
-.studio-z1-left {
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-}
-
-.studio-z1-center {
-    text-align: center;
-}
-
-.studio-z1-right {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 4px;
-}
-
-.studio-nav-box-lime {
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-    padding: 0 16px;
-    border: 1.5px solid #000000;
-    height: 34px;
-    background: #c8f135;
-    white-space: nowrap;
-}
-
-.studio-nav-box-lavender {
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-    padding: 0 16px;
-    border: 1.5px solid #000000;
-    height: 34px;
-    background: #e8b4f8;
-    white-space: nowrap;
-}
-
-.studio-nav-btn {
-    background: none;
-    border: none;
-    padding: 0;
-    cursor: pointer;
-}
-
-.studio-zone2 {
-    display: flex;
-    justify-content: center;
-    padding: 8px 32px;
-}
-
-.studio-zone2-label {
-    font-size: 11px;
-}
-
-.studio-header-center {
-    text-align: center;
-}
-
-.studio-confidential {
-    font-size: 10px;
-    letter-spacing: 0.14em;
-    color: #1a1a1a;
-    margin-top: 2px;
-}
-
-.studio-sku-filename {
-    font-size: 11px;
-    color: #999999;
-    letter-spacing: 0.06em;
-}
-
-.studio-print-btn {
-    background: #FFD700;
-    color: #000000;
-    border: 1.5px solid #000000;
-    border-radius: 0;
-    font-size: 11px;
-    font-weight: 400;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    padding: 0 16px;
-    height: 30px;
-    cursor: pointer;
-}
-
-.studio-print-btn:hover {
-    text-decoration: underline;
-}
-
-.studio-header-left {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    flex-shrink: 0;
-}
-
-.studio-logotype {
-    font-size: 22px;
-    font-weight: 500;
-    letter-spacing: 0.01em;
-    color: #1a1a1a;
-}
-
-.studio-header-rule {
-    display: inline-block;
-    width: 1px;
-    height: 22px;
-    background: #d0d0d0;
-}
-
-.studio-header-label {
-    font-size: 11px;
-}
-
-.studio-header-right {
-    display: flex;
-    align-items: center;
-    gap: 20px;
-    flex-shrink: 0;
-}
-
-.studio-filename {
-    font-size: 11px;
-    color: #999999;
-    letter-spacing: 0.02em;
-}
-
-.studio-nav-link {
-    font-size: 11px;
-    font-weight: 400;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    text-decoration: none;
-    color: #1a1a1a;
-}
-
-.studio-nav-link:hover {
-    text-decoration: underline;
 }
 
 /* --- Empty state --- */
@@ -1067,29 +852,6 @@ body.hq-body .settings-textarea {
 .studio-card svg {
     width: 100%;
     height: auto;
-}
-
-/* --- Print button --- */
-
-.studio-btn-print {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0 18px;
-    height: 32px;
-    background: #c8f135;
-    color: #000000;
-    border: 1.5px solid #000000;
-    border-radius: 0;
-    font-size: 11px;
-    font-weight: 400;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    cursor: pointer;
-}
-
-.studio-btn-print:hover {
-    text-decoration: underline;
 }
 
 /* --- Print modal --- */
@@ -1288,7 +1050,6 @@ body.hq-body .settings-textarea {
     }
 }
 
-
 /* ==========================================================================
    HQ DATABASE & ANALYTICS — additional styles
    ========================================================================== */
@@ -1338,7 +1099,6 @@ body.hq-body .settings-textarea {
     margin-left: 16px;
 }
 
-
 /* ==========================================================================
    HQ SPA — Persistent header and section navigation
    ========================================================================== */
@@ -1362,26 +1122,6 @@ body.hq-body .settings-textarea {
     grid-template-columns: 1fr auto 1fr;
     align-items: flex-start;
     width: 100%;
-}
-
-.hq-z1-left {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    justify-content: flex-start;
-    width: fit-content;
-}
-
-.hq-z1-center {
-    text-align: center;
-    white-space: nowrap;
-}
-
-.hq-z1-right {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 6px;
 }
 
 .hq-z1-bottom {
@@ -1418,12 +1158,6 @@ body.hq-body .settings-textarea {
 .hq-timestamp strong {
     font-weight: 700;
     color: #1a1a1a;
-}
-
-.hq-timestamp-box {
-    border: none;
-    padding: 0;
-    background: none;
 }
 
 .hq-confidential-sub {
@@ -1490,20 +1224,6 @@ body.hq-body .settings-textarea {
 
 .hq-section-link.active {
     text-decoration: underline;
-}
-
-.hq-timestamp-box {
-    border: 1px solid #000000;
-    padding: 4px 10px;
-    font-size: 11px;
-    font-weight: 400;
-    letter-spacing: 0.06em;
-    color: #1a1a1a;
-    white-space: nowrap;
-}
-
-.hq-action-link {
-    margin-left: 20px;
 }
 
 /* --- Studios section --- */
@@ -1596,14 +1316,6 @@ body.hq-body .settings-textarea {
     display: flex;
     align-items: center;
     gap: 8px;
-}
-
-.hq-profile-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 16px;
-    font-size: 13px;
-    color: #1a1a1a;
 }
 
 .hq-inline-input {
@@ -1788,7 +1500,6 @@ body.hq-body .settings-textarea {
 .hq-controls-row .hq-select {
     height: 34px;
 }
-
 
 /* ==========================================================================
    ANALYTICS — Company-wide and per-store

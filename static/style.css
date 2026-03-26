@@ -143,12 +143,28 @@ body { font-family: var(--font-main); }
     background: #d0d0d0;
 }
 
-.hq-header-label {
-    font-size: 11px;
+/* --- Shared label typography --- */
+
+.hq-summary-label,
+.hq-header-label,
+.hq-control-label,
+.hq-form-group label,
+.hq-detail-table thead th,
+.hq-info-label,
+.hq-analytics-navlink,
+.hq-subsection-heading,
+.studio-zone2-label,
+.studio-header-label,
+.studio-confidential,
+.hq-confidential-sub {
     font-weight: 400;
     letter-spacing: 0.12em;
     text-transform: uppercase;
     color: #999999;
+}
+
+.hq-header-label {
+    font-size: 11px;
 }
 
 .hq-header-right {
@@ -284,10 +300,6 @@ body { font-family: var(--font-main); }
 
 .hq-summary-label {
     font-size: 10px;
-    font-weight: 400;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: #999999;
     margin-bottom: 6px;
 }
 
@@ -333,8 +345,6 @@ body { font-family: var(--font-main); }
 .hq-control-label {
     font-size: 11px;
     letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: #999999;
 }
 
 .hq-select {
@@ -445,10 +455,6 @@ body { font-family: var(--font-main); }
     padding: 6px 10px;
     text-align: left;
     font-size: 10px;
-    font-weight: 400;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: #999999;
     border-bottom: 1px solid #e0e0e0;
 }
 
@@ -553,10 +559,6 @@ body { font-family: var(--font-main); }
 .hq-form-group label {
     display: block;
     font-size: 10px;
-    font-weight: 400;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: #999999;
     margin-bottom: 5px;
 }
 
@@ -853,10 +855,6 @@ body.hq-body .settings-textarea {
 
 .studio-zone2-label {
     font-size: 11px;
-    font-weight: 400;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: #999999;
 }
 
 .studio-header-center {
@@ -865,9 +863,7 @@ body.hq-body .settings-textarea {
 
 .studio-confidential {
     font-size: 10px;
-    font-weight: 400;
     letter-spacing: 0.14em;
-    text-transform: uppercase;
     color: #1a1a1a;
     margin-top: 2px;
 }
@@ -919,10 +915,6 @@ body.hq-body .settings-textarea {
 
 .studio-header-label {
     font-size: 11px;
-    font-weight: 400;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: #999999;
 }
 
 .studio-header-right {
@@ -1317,7 +1309,6 @@ body.hq-body .settings-textarea {
     font-size: 12px;
     font-weight: 500;
     letter-spacing: 0.06em;
-    text-transform: uppercase;
     color: #666666;
     margin-bottom: 10px;
     margin-top: 4px;
@@ -1437,9 +1428,7 @@ body.hq-body .settings-textarea {
 
 .hq-confidential-sub {
     font-size: 13px;
-    font-weight: 400;
     letter-spacing: 0.14em;
-    text-transform: uppercase;
     color: #1a1a1a;
     margin-top: 4px;
 }
@@ -1743,10 +1732,6 @@ body.hq-body .settings-textarea {
 
 .hq-info-label {
     font-size: 10px;
-    font-weight: 400;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: #999999;
     min-width: 44px;
 }
 
@@ -1887,9 +1872,6 @@ body.hq-body .settings-textarea {
 
 .hq-analytics-navlink {
     font-size: 11px;
-    font-weight: 400;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
     color: #1a1a1a;
     text-decoration: none;
 }

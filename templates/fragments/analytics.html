@@ -5,10 +5,8 @@ function scrollToSection(id) {
     var el = document.getElementById(id);
     if (!el) return;
     var header = document.querySelector('.hq-spa-header');
-    var subnav = document.querySelector('.hq-analytics-subnav');
     var headerH = header ? header.offsetHeight : 0;
-    var subnavH = subnav ? subnav.offsetHeight : 0;
-    var top = el.getBoundingClientRect().top + window.pageYOffset - headerH - subnavH - 16;
+    var top = el.getBoundingClientRect().top + window.pageYOffset - headerH - 16;
     window.scrollTo({ top: top, behavior: 'auto' });
 }
 </script>
@@ -206,14 +204,4 @@ function scrollToSection(id) {
     });
 })();
 
-// Keep sticky top offset in sync with header height via ResizeObserver
-(function() {
-    var subnav = document.querySelector('.hq-analytics-subnav');
-    var headerEl = document.querySelector('.hq-spa-header');
-    if (!subnav || !headerEl) return;
-    subnav.style.top = headerEl.offsetHeight + 'px';
-    new ResizeObserver(function() {
-        subnav.style.top = headerEl.offsetHeight + 'px';
-    }).observe(headerEl);
-})();
 </script>

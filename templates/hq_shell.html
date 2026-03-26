@@ -59,6 +59,7 @@
             </nav>
             <div class="hq-z2-spacer"></div>
         </div>
+        <div id="hq-header-subnav"></div>
     </header>
 
     <main id="hq-content" class="hq-main"></main>
@@ -116,6 +117,7 @@
             if (!section) {
                 currentSection = null;
                 document.getElementById('hq-content').innerHTML = '';
+                document.getElementById('hq-header-subnav').innerHTML = '';
                 document.querySelectorAll('.hq-section-link').forEach(function(l) {
                     l.classList.remove('active');
                 });
@@ -143,6 +145,11 @@
                         newScript.textContent = oldScript.textContent;
                         oldScript.parentNode.replaceChild(newScript, oldScript);
                     });
+                    // Move analytics sub-nav into sticky header if present
+                    var subnavSlot = document.getElementById('hq-header-subnav');
+                    subnavSlot.innerHTML = '';
+                    var subnav = content.querySelector('.hq-analytics-subnav');
+                    if (subnav) subnavSlot.appendChild(subnav);
                     history.pushState({section: section}, '', '/hq/?section=' + section);
                     if (section === 'dashboard') initDashboard();
                     window.scrollTo(0, 0);

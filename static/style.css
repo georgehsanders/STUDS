@@ -1582,10 +1582,6 @@ body.hq-body #refresh-btn:disabled {
     background: #ffffff;
     padding: 12px 32px;
     border-bottom: 1px solid #e0e0e0;
-    margin-bottom: 24px;
-    position: sticky;
-    top: 0;
-    z-index: 90;
 }
 
 .hq-analytics-navlink {

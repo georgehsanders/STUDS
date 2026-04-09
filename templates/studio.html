@@ -29,13 +29,16 @@
                 <div style="font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;font-weight:400;letter-spacing:0.14em;text-transform:uppercase;color:#1a1a1a;margin-top:4px;">(CONFIDENTIAL)</div>
             </div>
             <div style="display:flex;justify-content:flex-end;align-items:flex-start;flex-direction:column;gap:6px;">
-                {% if not no_sku_list %}
-                <div style="display:flex;justify-content:flex-end;width:100%;">
+                <div style="display:flex;justify-content:flex-end;width:100%;gap:8px;">
+                    <div style="display:inline-flex;align-items:center;gap:10px;padding:0 16px;height:34px;width:auto;white-space:nowrap;border:1.5px solid #000;background:#e8b4f8;flex-shrink:0;">
+                        <a href="/studio/omnicounts" style="font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;font-size:11px;font-weight:400;letter-spacing:0.12em;text-transform:uppercase;color:#000;text-decoration:none;">OMNICOUNTS</a>
+                    </div>
+                    {% if not no_sku_list %}
                     <div style="display:inline-flex;align-items:center;gap:10px;padding:0 16px;height:34px;width:auto;white-space:nowrap;border:1.5px solid #000;background:#e8b4f8;flex-shrink:0;">
                         <button onclick="handlePrint()" style="font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;font-size:11px;font-weight:400;letter-spacing:0.12em;text-transform:uppercase;color:#000;background:none;border:none;padding:0;cursor:pointer;">PRINT</button>
                     </div>
+                    {% endif %}
                 </div>
-                {% endif %}
                 {% if sku_list_filename %}
                 <div style="font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;font-size:11px;color:#999;letter-spacing:0.06em;text-align:right;width:100%;">{{ sku_list_filename }}</div>
                 {% endif %}
@@ -56,9 +59,12 @@
     </div>
     {% else %}
     <div class="studio-main">
-        <div class="studio-search-bar">
-            <input type="text" id="studio-search" class="studio-search-input" placeholder="Search SKUs or descriptions..." oninput="filterCards()">
-            <p class="studio-sku-count" id="studio-sku-count">{{ sku_items|length }} SKUs assigned this week — {{ sku_list_filename }}</p>
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+            <div class="studio-search-bar">
+                <input type="text" id="studio-search" class="studio-search-input" placeholder="Search SKUs or descriptions..." oninput="filterCards()">
+                <p class="studio-sku-count" id="studio-sku-count">{{ sku_items|length }} SKUs assigned this week — {{ sku_list_filename }}</p>
+            </div>
+            <a href="/studio/tutorial" class="studio-begin-count-btn">BEGIN COUNT</a>
         </div>
 
         <div class="studio-grid" id="studio-grid">
@@ -67,14 +73,27 @@
                 {% if item.image_filename %}
                 <div class="studio-card-img">
                     <img src="/database/images/{{ item.image_filename }}" alt="{{ item.sku }}">
+                    {% if item.status %}
+                    <span class="studio-sku-tag studio-sku-tag-{{ item.status }}">{{ item.status|upper }}</span>
+                    {% endif %}
                 </div>
                 {% else %}
                 <div class="studio-card-img studio-card-noimg">
                     <span>No image</span>
+                    {% if item.status %}
+                    <span class="studio-sku-tag studio-sku-tag-{{ item.status }}">{{ item.status|upper }}</span>
+                    {% endif %}
                 </div>
                 {% endif %}
-                <div class="studio-card-sku">{{ item.sku }}</div>
-                <div class="studio-card-desc">{{ item.description }}</div>
+                <div class="studio-card-info">
+                    <div>
+                        <div class="studio-card-sku">{{ item.sku }}</div>
+                        <div class="studio-card-desc">{{ item.description }}</div>
+                    </div>
+                    {% if item.retail_price is not none %}
+                    <div class="studio-sku-price">${{ '%.2f'|format(item.retail_price) }}</div>
+                    {% endif %}
+                </div>
                 <svg id="barcode-{{ item.sku }}"></svg>
             </div>
             {% endfor %}

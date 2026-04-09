@@ -30,9 +30,12 @@ ADMIN_USERNAME = 'hq'
 ADMIN_PASSWORD = 'hq'
 app.secret_key = 'studs-secret-key-change-in-production'
 
-PROCESSED_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'processed')
-SETTINGS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'settings.json')
-DATABASE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'database')
+_REPO_ROOT = os.path.dirname(os.path.abspath(__file__))
+_DATA_DIR = os.environ.get('STUDS_DATA_DIR', '').strip()
+
+PROCESSED_DIR = os.path.join(_DATA_DIR, 'processed') if _DATA_DIR else os.path.join(_REPO_ROOT, 'processed')
+SETTINGS_FILE = os.path.join(_REPO_ROOT, 'settings.json')
+DATABASE_DIR = os.path.join(_DATA_DIR, 'database') if _DATA_DIR else os.path.join(_REPO_ROOT, 'database')
 MASTER_DIR = os.path.join(DATABASE_DIR, 'master')
 IMAGES_DIR = os.path.join(DATABASE_DIR, 'images')
 STORE_DB = os.path.join(DATABASE_DIR, 'store_profiles.db')
@@ -270,6 +273,40 @@ def load_master_skus():
     return result
 
 
+def load_sku_status():
+    """Load SKU_Status.csv and return a dict of SKU (uppercase) -> status (lowercase)."""
+    filepath = os.path.join(MASTER_DIR, 'SKU_Status.csv')
+    if not os.path.isfile(filepath):
+        return {}
+    rows = parse_csv(filepath)
+    result = {}
+    for row in rows:
+        sku = row.get('sku', '').strip().upper()
+        status = row.get('status', '').strip().lower()
+        if sku and status in ('active', 'sunset'):
+            result[sku] = status
+    return result
+
+
+def load_sku_prices():
+    """Load SKU_Prices.csv and return a dict of SKU (uppercase) -> retail_price (float)."""
+    filepath = os.path.join(DATABASE_DIR, 'SKU_Prices.csv')
+    if not os.path.isfile(filepath):
+        return {}
+    rows = parse_csv(filepath)
+    result = {}
+    for row in rows:
+        sku = row.get('sku', '').strip().upper()
+        price_str = row.get('retail_price', '').strip()
+        if not sku or not price_str:
+            continue
+        try:
+            result[sku] = float(price_str)
+        except ValueError:
+            continue
+    return result
+
+
 def find_image_for_sku(sku):
     """Find an image file in IMAGES_DIR whose name starts with the SKU (case-insensitive)."""
     if not os.path.isdir(IMAGES_DIR):
@@ -467,20 +504,57 @@ def studio_index():
                 sku_names[sku] = name
 
         master = load_master_skus()
+        sku_status = load_sku_status()
+        sku_prices = load_sku_prices()
 
         for sku in sorted(sku_set):
             desc = master.get(sku.upper(), '') or sku_names.get(sku, '') or sku
             image_filename = find_image_for_sku(sku)
+            status = sku_status.get(sku.upper())
+            price = sku_prices.get(sku.upper())
             sku_items.append({
                 'sku': sku,
                 'description': desc,
                 'image_filename': image_filename,
+                'status': status,
+                'retail_price': price,
             })
 
     return render_template('studio.html',
                            sku_items=sku_items,
                            sku_list_filename=sku_list_filename,
                            no_sku_list=no_sku_list)
+
+
+@app.route('/studio/tutorial')
+@studio_login_required
+def studio_tutorial():
+    return render_template('studio_tutorial.html')
+
+
+@app.route('/studio/omnicounts', methods=['GET', 'POST'])
+@studio_login_required
+def studio_omnicounts():
+    if request.method == 'GET':
+        return render_template('studio_omnicounts.html')
+
+    store_number = request.form.get('store_number', '').strip()
+    if not store_number or not store_number.isdigit():
+        flash('Store number must be numeric.', 'error')
+        return redirect(url_for('studio_omnicounts'))
+
+    bp_file = request.files.get('bp_file')
+    if not bp_file or not bp_file.filename:
+        flash('Please upload a Brightpearl inventory CSV.', 'error')
+        return redirect(url_for('studio_omnicounts'))
+
+    error, result = _generate_omnicounts(store_number, bp_file)
+    if error:
+        flash(error, 'error')
+        return redirect(url_for('studio_omnicounts'))
+
+    result_bytes, download_name = result
+    return send_file(result_bytes, mimetype='text/csv', as_attachment=True, download_name=download_name)
 
 
 # --- HQ portal ---
@@ -565,8 +639,22 @@ def hq_section_database():
     master = load_master_skus()
     for m in missing:
         m['description'] = master.get(m['sku'], '')
+    status_path = os.path.join(MASTER_DIR, 'SKU_Status.csv')
+    status_rows = 0
+    status_updated = 'N/A'
+    if os.path.isfile(status_path):
+        status_rows = len(load_sku_status())
+        status_updated = datetime.fromtimestamp(os.path.getmtime(status_path)).strftime('%Y-%m-%d %H:%M:%S')
+    prices_path = os.path.join(DATABASE_DIR, 'SKU_Prices.csv')
+    prices_count = 0
+    prices_updated = 'N/A'
+    if os.path.isfile(prices_path):
+        prices_count = len(load_sku_prices())
+        prices_updated = datetime.fromtimestamp(os.path.getmtime(prices_path)).strftime('%Y-%m-%d %H:%M:%S')
     return render_template('fragments/database.html',
                            msf_rows=msf_rows, msf_updated=msf_updated,
+                           status_rows=status_rows, status_updated=status_updated,
+                           prices_count=prices_count, prices_updated=prices_updated,
                            image_count=image_count, orphaned=orphaned, missing=missing)
 
 
@@ -600,6 +688,34 @@ def hq_database_upload_msf():
         f.save(msf_path)
         run_image_sku_audit()
         flash('Master SKU file updated.', 'success')
+    return redirect('/hq/?section=database')
+
+
+@app.route('/hq/database/upload-sku-status', methods=['POST'])
+@hq_login_required
+def hq_database_upload_sku_status():
+    status_path = os.path.join(MASTER_DIR, 'SKU_Status.csv')
+    f = request.files.get('status_file')
+    if f and f.filename:
+        archive_file_if_exists(status_path, 'sku_status')
+        os.makedirs(MASTER_DIR, exist_ok=True)
+        f.save(status_path)
+        count = len(load_sku_status())
+        flash(f'SKU Status file updated. {count} SKUs loaded.', 'success')
+    return redirect('/hq/?section=database')
+
+
+@app.route('/hq/database/upload-sku-prices', methods=['POST'])
+@hq_login_required
+def hq_database_upload_sku_prices():
+    prices_path = os.path.join(DATABASE_DIR, 'SKU_Prices.csv')
+    f = request.files.get('prices_file')
+    if f and f.filename:
+        archive_file_if_exists(prices_path, 'sku_prices')
+        os.makedirs(DATABASE_DIR, exist_ok=True)
+        f.save(prices_path)
+        count = len(load_sku_prices())
+        flash(f'SKU Prices file updated. {count} SKUs loaded.', 'success')
     return redirect('/hq/?section=database')
 
 
@@ -736,39 +852,25 @@ def hq_upload():
     return render_template('upload.html', global_files=global_files, variance_files=variance_files)
 
 
-@app.route('/hq/generate-omnicounts', methods=['POST'])
-@hq_login_required
-def hq_generate_omnicounts():
-    # Validate store number
-    store_number = request.form.get('store_number', '').strip()
-    if not store_number or not store_number.isdigit():
-        flash('Store number must be numeric.', 'error')
-        return redirect(url_for('hq_upload'))
+def _generate_omnicounts(store_number, bp_file):
+    """Shared OmniCounts generation logic.
 
-    # Find the weekly SKU list using reconcile's scan
+    Returns (error_message, None) on failure or (None, (bytes_io, filename)) on success.
+    """
     scan = scan_input_files()
     if not scan['sku_lists']:
-        flash('No weekly SKU list file found in /input/. Upload one before generating.', 'error')
-        return redirect(url_for('hq_upload'))
+        return ('No weekly SKU list file found in /input/. Upload one before generating.', None)
 
     sku_list_filename = scan['sku_lists'][0][0]
     weekly_skus = load_sku_list(os.path.join(INPUT_DIR, sku_list_filename))
-
-    # Read and filter the uploaded Brightpearl CSV
-    bp_file = request.files.get('bp_file')
-    if not bp_file or not bp_file.filename:
-        flash('Please upload a Brightpearl inventory CSV.', 'error')
-        return redirect(url_for('hq_upload'))
 
     raw_bytes = bp_file.read()
     text = clean_csv_content(raw_bytes)
     reader = csv.DictReader(io.StringIO(text))
     reader.fieldnames = [h.strip() for h in reader.fieldnames]
 
-    # Authoritative ordered column list from the CSV header
     fieldnames = list(reader.fieldnames)
 
-    # Detect all known columns in a single pass (case-insensitive, original case preserved)
     sku_col = None
     product_id_col = None
     product_name_col = None
@@ -784,11 +886,9 @@ def hq_generate_omnicounts():
         elif hl == 'options' and options_col is None:
             options_col = h
     if sku_col is None:
-        flash('Uploaded CSV has no SKU column.', 'error')
-        return redirect(url_for('hq_upload'))
+        return ('Uploaded CSV has no SKU column.', None)
     text_cols = {sku_col, product_id_col, product_name_col, options_col} - {None}
 
-    # Collect matching rows, keyed exactly to fieldnames
     matched_rows = []
     seen_skus = set()
     for row in reader:
@@ -801,7 +901,6 @@ def hq_generate_omnicounts():
             matched_rows.append(out)
             seen_skus.add(sku_val)
 
-    # Load SKU Master for descriptions
     sku_master_desc = {}
     sku_master_path = os.path.join(MASTER_DIR, 'SKU_Master.csv')
     if os.path.isfile(sku_master_path):
@@ -811,7 +910,6 @@ def hq_generate_omnicounts():
             if s:
                 sku_master_desc[s] = row.get('description', '').strip()
 
-    # Write matched rows + placeholder rows for missing SKUs
     output = io.StringIO()
     writer = csv.DictWriter(output, fieldnames=fieldnames)
     writer.writeheader()
@@ -833,6 +931,28 @@ def hq_generate_omnicounts():
     output.seek(0)
     result_bytes = io.BytesIO(output.getvalue().encode('utf-8'))
     download_name = f'{store_number}_OnHands.csv'
+    return (None, (result_bytes, download_name))
+
+
+@app.route('/hq/generate-omnicounts', methods=['POST'])
+@hq_login_required
+def hq_generate_omnicounts():
+    store_number = request.form.get('store_number', '').strip()
+    if not store_number or not store_number.isdigit():
+        flash('Store number must be numeric.', 'error')
+        return redirect(url_for('hq_upload'))
+
+    bp_file = request.files.get('bp_file')
+    if not bp_file or not bp_file.filename:
+        flash('Please upload a Brightpearl inventory CSV.', 'error')
+        return redirect(url_for('hq_upload'))
+
+    error, result = _generate_omnicounts(store_number, bp_file)
+    if error:
+        flash(error, 'error')
+        return redirect(url_for('hq_upload'))
+
+    result_bytes, download_name = result
     return send_file(result_bytes, mimetype='text/csv', as_attachment=True, download_name=download_name)
 
 
@@ -1093,6 +1213,26 @@ def hq_database():
                 run_image_sku_audit()
                 flash(f'Master SKU file updated. {len(diff_added)} SKUs added, {len(diff_removed)} SKUs removed.', 'success')
 
+        elif action == 'upload_sku_status':
+            f = request.files.get('status_file')
+            if f and f.filename:
+                status_path = os.path.join(MASTER_DIR, 'SKU_Status.csv')
+                archive_file_if_exists(status_path, 'sku_status')
+                os.makedirs(MASTER_DIR, exist_ok=True)
+                f.save(status_path)
+                count = len(load_sku_status())
+                flash(f'SKU Status file updated. {count} SKUs loaded.', 'success')
+
+        elif action == 'upload_sku_prices':
+            f = request.files.get('prices_file')
+            if f and f.filename:
+                prices_path = os.path.join(DATABASE_DIR, 'SKU_Prices.csv')
+                archive_file_if_exists(prices_path, 'sku_prices')
+                os.makedirs(DATABASE_DIR, exist_ok=True)
+                f.save(prices_path)
+                count = len(load_sku_prices())
+                flash(f'SKU Prices file updated. {count} SKUs loaded.', 'success')
+
         elif action == 'upload_images':
             img_files = request.files.getlist('image_files')
             count = 0
@@ -1133,6 +1273,22 @@ def hq_database():
     for m in missing:
         m['description'] = master.get(m['sku'], '')
 
+    # SKU Status file
+    status_path = os.path.join(MASTER_DIR, 'SKU_Status.csv')
+    status_rows = 0
+    status_updated = 'N/A'
+    if os.path.isfile(status_path):
+        status_rows = len(load_sku_status())
+        status_updated = datetime.fromtimestamp(os.path.getmtime(status_path)).strftime('%Y-%m-%d %H:%M:%S')
+
+    # SKU Prices file
+    prices_path = os.path.join(DATABASE_DIR, 'SKU_Prices.csv')
+    prices_count = 0
+    prices_updated = 'N/A'
+    if os.path.isfile(prices_path):
+        prices_count = len(load_sku_prices())
+        prices_updated = datetime.fromtimestamp(os.path.getmtime(prices_path)).strftime('%Y-%m-%d %H:%M:%S')
+
     # Archive browser
     archives = [dict(r) for r in conn.execute(
         "SELECT id, file_type, original_filename, store_id, archived_at, row_count, file_size_bytes FROM archive_files ORDER BY archived_at DESC LIMIT 50"
@@ -1141,6 +1297,8 @@ def hq_database():
 
     return render_template('database.html',
                            msf_rows=msf_rows, msf_updated=msf_updated,
+                           status_rows=status_rows, status_updated=status_updated,
+                           prices_count=prices_count, prices_updated=prices_updated,
                            image_count=image_count,
                            orphaned=orphaned, missing=missing,
                            archives=archives,
@@ -1204,6 +1362,10 @@ def inject_globals():
 if __name__ == '__main__':
     os.makedirs(INPUT_DIR, exist_ok=True)
     os.makedirs(PROCESSED_DIR, exist_ok=True)
+    os.makedirs(DATABASE_DIR, exist_ok=True)
+    os.makedirs(MASTER_DIR, exist_ok=True)
+    os.makedirs(IMAGES_DIR, exist_ok=True)
     print(f"[STUDS Stock Check] Input directory: {INPUT_DIR}")
+    print(f"[STUDS Stock Check] Database directory: {DATABASE_DIR}")
     print(f"[STUDS Stock Check] Starting on http://localhost:5000")
     app.run(debug=True, host='127.0.0.1', port=5000)
